@@ -1,0 +1,62 @@
+[
+  {
+    "skill_code": "S1",
+    "presentation": "Counters: One and many",
+    "criteria": {
+      "B": "Presented; identifies one from either set.",
+      "I": "Identifies 'one' and 'many' from two sets.",
+      "P": "Names 'one' and 'many' most times.",
+      "E": "Identifies and names 'one' and 'many' from set of counters."
+    }
+  },
+  {
+    "skill_code": "S2",
+    "presentation": "Counters: More, less, equal to",
+    "criteria": {
+      "B": "Presented; identifies at least one of three.",
+      "I": "Identifies at least two of the three.",
+      "P": "Names all three most times.",
+      "E": "Identifies and names 'more', 'less' and 'equal' from sets of counters."
+    }
+  },
+  {
+    "skill_code": "S3",
+    "presentation": "Counters: Most and least",
+    "criteria": {
+      "B": "Presented; identifies one from either set.",
+      "I": "Identifies 'most' and 'least' from three sets.",
+      "P": "Names both names most times.",
+      "E": "Identifies and names 'most' and 'least' from sets of counters."
+    }
+  },
+  {
+    "skill_code": "S4",
+    "presentation": "Pattern Maze: Straight",
+    "criteria": {
+      "B": "Presented; traces with a palm grip and frequent lifts.",
+      "I": "Adjusts to a pincer grip; traces with occasional lifts.",
+      "P": "Maintains pincer grip; traces most without lifting, slowing at the turns.",
+      "E": "Traces the full pattern continuously in one direction."
+    }
+  },
+  {
+    "skill_code": "S5",
+    "presentation": "Pattern Maze: Slope",
+    "criteria": {
+      "B": "Presented; traces with a palm grip and frequent lifts.",
+      "I": "Adjusts to a pincer grip; traces with occasional lifts.",
+      "P": "Maintains pincer grip; traces most without lifting, slowing at the turns.",
+      "E": "Traces the full pattern continuously in one direction."
+    }
+  },
+  {
+    "skill_code": "S6",
+    "presentation": "Circle Sorter: Pairing",
+    "criteria": {
+      "B": "Presented; slots insets by trial and error.",
+      "I": "Holds with pincer grip; visually compares and places 2 or 3 insets.",
+      "P": "Visually compares and places most insets.",
+      "E": "Slots all insets by visual comparison independently."
+    }
+  }
+]
