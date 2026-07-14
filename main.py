@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
@@ -26,6 +27,18 @@ ROSTER_PATH = BASE_DIR / "students.csv"
 SKILLS_PATH = BASE_DIR / "skills.json"
 
 app = FastAPI(title="ICR core", version="0.2.0")
+
+# Allow the frontend (running on a different port/origin, e.g. Live Server
+# on :5501) to call this backend. For a class project/demo, allowing all
+# origins is fine -- lock this down to specific origins for production.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,  # must be False when allow_origins is "*" -- browsers
+                              # reject the wildcard+credentials combo per spec
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")

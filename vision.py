@@ -40,7 +40,7 @@ except ImportError as e:
 
 MODEL = "qwen/qwen3.6-27b"  # Groq's current vision-capable model (preview)
 
-MAX_DIMENSION = 1568
+MAX_DIMENSION = 900  # smaller image = fewer input tokens, to fit Groq's free-tier TPM limit
 JPEG_QUALITY = 85
 
 
@@ -103,44 +103,35 @@ def extract_from_image(image_bytes, media_type, skill_codes, api_key=None):
             "  GROQ_API_KEY=your-key-here"
         )
 
-    # Debug lines to inspect the loaded API key details
-    print("=" * 50)
-    print("Loaded key:", repr(key))
-    print("Starts with:", key[:10] if key else "None")
-    print("Length:", len(key) if key else 0)
-    print("=" * 50)
-
     client = Groq(api_key=key)
-    print("Testing API...")
-    print(client.models.list())
-    print("API test passed!")
 
     b64 = _prepare_image_b64(image_bytes)
     prompt = _build_prompt(skill_codes)
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            temperature=0,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{b64}"
-                            },
-                        },
-                    ],
-                }
-            ],
-        )
-    except Exception:
-        import traceback
-        traceback.print_exc()
-        raise
+    # qwen/qwen3.6-27b officially supports reasoning_effort="none" to
+    # properly disable its verbose chain-of-thought reasoning at the API
+    # level (the in-prompt "/no_think" trick was not reliably honored).
+    # reasoning_format="hidden" further ensures only the final answer
+    # text is returned, with no <think> content mixed into it.
+    response = client.chat.completions.create(
+        model=MODEL,
+        temperature=0,
+        max_tokens=2000,
+        reasoning_effort="none",
+        reasoning_format="hidden",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+                    },
+                ],
+            }
+        ],
+    )
 
     text = response.choices[0].message.content.strip()
 
@@ -148,25 +139,18 @@ def extract_from_image(image_bytes, media_type, skill_codes, api_key=None):
     # actual answer -- strip that out before parsing.
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
-    # Clean up markdown code blocks if the model wrapped the JSON response.
-    # Slicing is performed using clean variables to prevent any truncation.
-    prefix_json = "```json"
-    prefix_fence = "```"
-    suffix_fence = "```"
-
-    if text.startswith(prefix_json):
-        text = text[len(prefix_json):]
-    elif text.startswith(prefix_fence):
-        text = text[len(prefix_fence):]
-        
-    if text.endswith(suffix_fence):
-        text = text[:-len(suffix_fence)]
-        
+    if text.startswith("```json"):
+        text = text[len("```json"):]
+    if text.startswith("```"):
+        text = text[len("```"):]
+    if text.endswith("```"):
+        text = text[:-len("```")]
     text = text.strip()
 
     try:
         return json.loads(text)
     except json.JSONDecodeError as e:
         raise RuntimeError(
-            f"Model response wasn't valid JSON. Raw response:\n{text[:500]}"
+            f"Model response wasn't valid JSON -- try again. "
+            f"Raw response start: {text[:200]}"
         ) from e
