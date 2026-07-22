@@ -1,43 +1,138 @@
-# ICR core
+# ICR Observation Tracker
 
-A standalone service: **photo of a filled Observation Record page in →
-structured, student-matched JSON out.** No user accounts, no app
-integration — just the extraction core.
+A FastAPI-based service that extracts handwritten student observation records from Observation Record sheets, matches them with the student database, and stores the extracted observations in a PostgreSQL database.
 
-## What it does
+---
 
-1. You POST a photo to `/extract`.
-2. It sends the photo to Claude (vision) with instructions to read the
-   handwritten header (name/class/section/year) and, for every skill row,
-   check whether each level (B/I/P/E) has an actual handwritten date in
-   its date box.
-   - **A level is only ever marked if a date is literally present.**
-     No auto-filling lower levels from a higher one, no guessing on
-     illegible handwriting — those come back `null` and land in
-     `needs_review`.
-3. It matches the handwritten student header against your own roster
-   (`data/students.csv`), narrowing by class + section + year first,
-   then fuzzy-matching the name.
-4. It returns one JSON object with everything: the matched student (or
-   `not_found` / `ambiguous` if it couldn't confidently match), which
-   skill levels were dated, and the raw extraction for debugging.
+## Features
 
-## Setup
+- 📷 Upload handwritten Observation Record images
+- 🤖 AI-powered handwriting extraction using **Groq**
+- 👨‍🎓 Automatic student matching
+- 📊 Extracts observation dates for all skill levels (B / I / P / E)
+- 💾 Stores extracted observations in PostgreSQL
+- 🔍 Flags uncertain matches for manual review
+- ⚡ FastAPI backend with Uvicorn
+
+## Workflow
+
+```
+Observation Record Image
+          │
+          ▼
+     AI Vision Extraction Groq
+          │
+          ▼
+ Header & Skill Extraction
+          │
+          ▼
+ Student Matching
+          │
+          ▼
+ Structured JSON
+          │
+          ▼
+ PostgreSQL Database
+```
+
+---
+
+## Tech Stack
+
+- Python 3.11+
+- FastAPI
+- Uvicorn
+- PostgreSQL
+- psycopg2
+- Pandas
+- RapidFuzz
+- Python-dotenv
+
+---
+
+## Project Structure
+
+```
+ProjectICR/
+│
+├── backend/
+│   ├── main.py
+│   ├── db.py
+│   ├── matcher.py
+│   ├── vision.py
+│   ├── skills.json
+│   ├── students.csv
+│   ├── requirements.txt
+│   ├── .env
+│   └── README.md
+│
+├── frontend/
+│   └── observation_tracker_front_end.html
+│
+└── sample_images/
+```
+
+---
+
+## Installation
+
+Clone the repository:
+
 ```bash
-cd icr-core
+git clone <repository-url>
+cd ProjectICR/backend
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
-export ANTHROPIC_API_KEY=sk-ant-...
-uvicorn app.main:app --reload --port 8000
 ```
 
-## Usage
+---
+
+## Environment Variables
+
+Create a `.env` file inside the backend folder.
+
+```env
+DATABASE_URL=postgresql://username:password@host:5432/database_name
+AI_API_KEY=your_api_key
+```
+
+---
+
+## Running the Application
 
 ```bash
-curl -X POST http://localhost:8000/extract \
-  -F "photo=@sample_record.jpg"
+cd backend
+
+uvicorn main:app --reload --host 0.0.0.0 --port 8080
 ```
 
-Example response:
+Backend URL:
+
+```
+http://localhost:8080
+```
+
+---
+
+## API
+
+### POST `/extract`
+
+Uploads an Observation Record image and returns structured observation data.
+
+#### Request
+
+Multipart Form Data
+
+```
+photo=<image>
+```
+
+#### Response
 
 ```json
 {
@@ -49,48 +144,81 @@ Example response:
     "section": "Section A",
     "year": "2026"
   },
-  "match_confidence": 0.93,
+  "match_confidence": 0.94,
   "skills": [
-    {"skill_code": "S1", "levels": {"B": "12/05", "I": "14/06", "P": null, "E": null}},
-    {"skill_code": "S2", "levels": {"B": null, "I": null, "P": null, "E": null}}
+    {
+      "skill_code": "S1",
+      "levels": {
+        "B": "12/05",
+        "I": "14/06",
+        "P": null,
+        "E": null
+      }
+    }
   ],
   "needs_review": [],
-  "raw_extraction": { "...": "full model output, kept for debugging" }
+  "raw_extraction": {}
 }
 ```
 
-## Files
+---
 
-```
-icr-core/
-  app/
-    main.py      FastAPI app, the /extract endpoint
-    vision.py     Calls Claude with the photo, returns structured JSON
-    matcher.py    Matches OCR'd student fields against your roster
-  data/
-    students.csv  Your student roster (name, class, section, year) — edit this
-    skills.json   Skill definitions currently covering S1-S6 (Month 1)
-  requirements.txt
-```
+## Student Matching
 
-## Extending
+The matching process considers:
 
-- **More skills**: add entries to `data/skills.json` in the same shape.
-  The `skill_codes` list passed to the vision prompt is read straight
-  from this file, so no code changes needed — just data.
-- **Bigger/different roster**: edit `data/students.csv` directly, or
-  swap `load_roster()` in `matcher.py` for a real database call if the
-  list grows past what's comfortable in a spreadsheet.
-- **`match_status` handling**: your caller should treat `"ambiguous"`
-  and `"not_found"` as "needs a human to pick the right student" rather
-  than silently dropping the observation or guessing.
-- **Model choice**: `vision.py` uses a strong vision model for
-  handwriting since accuracy matters here; swap `MODEL` if you want to
-  trade cost for speed once you've validated accuracy on real photos.
+- Academic Year
+- Class
+- Section
+- Fuzzy name matching
 
-## Not included (by design, per current scope)
+Possible results:
 
-No auth, no database, no UI, no student-management screens — this is
-just the extraction core. It returns JSON; what you do with it
-(write to a database, show it in a review screen, etc.) is up to
-whatever calls this service.
+- `matched`
+- `ambiguous`
+- `not_found`
+
+---
+
+## Database
+
+The Observation Tracker stores:
+
+- Student Information
+- Matched Student ID
+- Observation Details
+- Skill Progress
+- Extraction Metadata
+- Confidence Scores
+
+The application connects to PostgreSQL using the `DATABASE_URL` specified in the `.env` file.
+
+---
+
+## Technologies
+
+| Component | Technology |
+|-----------|------------|
+| Backend | FastAPI |
+| API Server | Uvicorn |
+| Database | PostgreSQL |
+| Database Driver | psycopg2 |
+| Data Processing | Pandas |
+| Student Matching | RapidFuzz |
+| Configuration | python-dotenv |
+
+---
+
+## Future Enhancements
+
+- Bulk Image Upload
+- PDF Support
+- Admin Dashboard
+- Analytics & Reports
+- Authentication & Authorization
+
+---
+
+## License
+
+Developed as part of the **ICR Observation Tracker** project.
