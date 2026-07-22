@@ -1,6 +1,46 @@
-.venv/
-__pycache__/
-*.pyc
+# Environment Variables & Secrets
 .env
+*.env
+**/.env
+
+# Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python Caches & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Local SQLite Databases & Binary DB Files
+*.db
+*.sqlite
+*.sqlite3
+icr.db
 *.db-journal
+
+# IDE & Editor Settings
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary Uploads & Images
+images/*.jpg
+images/*.jpeg
+images/*.png
+uploads/
+temp/
+tmp/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# Logs & Binaries
+*.log
+*.exe
