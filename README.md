@@ -3,6 +3,18 @@
 A FastAPI-based service that extracts handwritten student observation records from Observation Record sheets, matches them with the student database, and stores the extracted observations in a PostgreSQL database.
 
 ---
+## Student Roster
+
+The Observation Tracker uses the student roster stored in `students.csv` to match extracted observations.
+
+**Important:**
+- Each student record must contain:
+  - Student Name
+  - Class
+  - Section
+  - Academic Year
+- If these details are missing or not updated, the observation may still be saved, but the student information (`name`, `class`, `section`, and `year`) will be stored as `null`.
+- Keep the student roster updated before processing new observation records to ensure accurate matching.
 
 ## Features
 
